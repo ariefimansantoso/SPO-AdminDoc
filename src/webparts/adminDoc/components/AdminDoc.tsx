@@ -40,7 +40,7 @@ export default function AdminDoc(props: IAdminDocProps) {
   const [department, setDepartment] = useState<string>('Loading...');
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserProfile = async (): Promise<void> => {
       try {
         const response: SPHttpClientResponse = await props.context.spHttpClient.get(
           `${props.context.pageContext.web.absoluteUrl}/_api/SP.UserProfiles.PeopleManager/GetMyProperties`,
@@ -54,7 +54,9 @@ export default function AdminDoc(props: IAdminDocProps) {
         setDepartment('Profile unavailable');
       }
     };
-    fetchUserProfile();
+    fetchUserProfile().catch(() => {
+      setDepartment('Profile unavailable');
+    });
   }, [props.context]);
 
   const handleNavClick = (ev?: React.MouseEvent<HTMLElement>, item?: INavLink) => {
@@ -172,8 +174,8 @@ export default function AdminDoc(props: IAdminDocProps) {
   switch (activeScreen) {
     case 'dashboard': return renderDashboard();
     case 'documents': 
-        return <DocumentsView context={props.context} onCreateNew={() => setActiveScreen('create')} />;
-    case 'create': return <CreateDocumentView context={props.context} userDisplayName={props.userDisplayName} onSuccess={() => setActiveScreen('documents')} />;
+        return <DocumentsView context={props.context} onCreateNew={() => void setActiveScreen('create')} />;
+    case 'create': return <CreateDocumentView context={props.context} userDisplayName={props.userDisplayName} onSuccess={() => void setActiveScreen('documents')} />;
     default: return <div><h2>Under Construction</h2><p>This screen is not built yet.</p></div>;
   }
 };

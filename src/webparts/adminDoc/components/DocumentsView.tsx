@@ -66,11 +66,7 @@ export const DocumentsView: React.FC<IDocumentsViewProps> = ({ context, onCreate
   const [selectedDept, setSelectedDept] = useState<string>('all');
   const [selectedPivot, setSelectedPivot] = useState<string>('All Documents');
 
-  useEffect(() => {
-    fetchSharePointDocuments();
-  }, []);
-
-  const fetchSharePointDocuments = async () => {
+  const fetchSharePointDocuments = async (): Promise<void> => {
     setIsLoading(true);
     setErrorMessage(null);
 
@@ -131,6 +127,12 @@ export const DocumentsView: React.FC<IDocumentsViewProps> = ({ context, onCreate
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSharePointDocuments().catch((err) => {
+      console.error('Failed to load documents:', err);
+    });
+  }, []);
 
   // Apply all search and filter conditions
   const applyFilters = (search: string, status: string, type: string, dept: string, pivot: string) => {
