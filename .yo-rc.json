@@ -1,0 +1,19 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "useGulp": false,
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "18.20.8",
+    "sdksVersions": {},
+    "version": "1.23.2",
+    "libraryName": "aivara-test",
+    "libraryId": "0188bac0-dd9e-4217-b820-334b4ed417ee",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "aivara-test",
+    "solutionShortDescription": "aivara-test description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}

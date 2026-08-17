@@ -1,0 +1,22 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "a34443d3-3e20-43df-9f28-8d0c534d9367",
+  "alias": "AdminDocWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "TeamsPersonalApp", "TeamsTab", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "AdminDoc" },
+    "description": { "default": "AdminDoc description" },
+    "officeFabricIconFontName": "Page",
+    "properties": {
+      "description": "AdminDoc"
+    }
+  }]
+}

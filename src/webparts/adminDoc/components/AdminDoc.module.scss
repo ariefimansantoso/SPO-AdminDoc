@@ -1,0 +1,456 @@
+/* .appWrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 600px;
+  height: calc(100vh - 200px);
+  border: 1px solid #c8c6c4;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background-color: #ffffff;
+} */
+
+.appWrapper {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  
+  /* --- TEMPORARY WORKBENCH FULLSCREEN HACK --- */
+  position: fixed;
+  top: 48px; /* Sits just below the black Microsoft 365 top bar */
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 48px);
+  z-index: 9999; /* Forces it to sit on top of all SharePoint chrome */
+}
+
+/* --- NEW HEADER STYLES --- */
+.topHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  border-bottom: 1px solid #edebe9;
+  background-color: #ffffff;
+}
+
+.headerLeft {
+  width: 250px; /* Matches the sidebar width exactly */
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-right: 1px solid #edebe9;
+  box-sizing: border-box;
+  
+  /* Basic logo styling */
+  font-size: 22px;
+  font-weight: 600;
+  color: #0078d4; /* SharePoint Blue */
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px; /* Spacing between icons and profile */
+}
+
+/* --- EXISTING SPLIT LAYOUT (Now acting as the body) --- */
+.adminDoc {
+  display: flex;
+  flex-grow: 1; /* Takes up remaining height below header */
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid #edebe9;
+  background-color: #faf9f8;
+}
+
+.mainContent {
+  flex-grow: 1;
+  padding: 32px;
+  overflow-y: auto;
+}
+
+/* --- DASHBOARD LAYOUT STYLES --- */
+
+.dashboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  
+  h2 {
+    margin: 0;
+    font-weight: 400;
+    font-size: 24px;
+  }
+}
+
+/* Grids */
+.gridRow5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.gridRow3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Base Card Style */
+.card {
+  background: #ffffff;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 5 Top Summary Cards */
+.summaryCard {
+  align-items: center;
+  text-align: center;
+
+  .metric {
+    font-size: 32px;
+    font-weight: 600;
+    color: #0078d4;
+    margin-bottom: 8px;
+  }
+  .metricLabel {
+    font-size: 13px;
+    color: #605e5c;
+    font-weight: 600;
+  }
+}
+
+/* List Cards (Middle Row) */
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f2f1;
+  font-size: 13px;
+  
+  .listIcon { margin-right: 12px; font-size: 16px; color: #0078d4; }
+  .listName { flex-grow: 1; font-weight: 600; }
+  .listStatus { margin-right: 16px; color: #605e5c; }
+  .listDue { color: #d13438; }
+}
+
+.listFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto; /* Pushes footer to bottom */
+  padding-top: 16px;
+  font-size: 12px;
+  color: #605e5c;
+}
+
+/* Bottom Cards - Donut Chart */
+.donutWrapper {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 12px;
+}
+
+.donut {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  /* Colors map to: Draft, Review, Pending, Approve, Published, Archived */
+  background: conic-gradient(
+    #c8c6c4 0 13%,
+    #ffaa44 13% 24%,
+    #d13438 24% 31%,
+    #107c10 31% 63%,
+    #0078d4 63% 95%,
+    #605e5c 95% 100%
+  );
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* The hole in the donut */
+.donut::after {
+  content: "";
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: white;
+}
+
+.donutLegend {
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Announcements Card */
+.announcementItem {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  
+  .announceIcon { font-size: 24px; color: #d13438; }
+  .announceTitle { font-weight: 600; margin-bottom: 4px; }
+  .announceDesc { font-size: 13px; color: #605e5c; margin-bottom: 8px; }
+  .announceMeta { font-size: 11px; color: #a19f9d; }
+}
+
+/* --- DOCUMENTS PAGE STYLES --- */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  
+  h2 { margin: 0; font-size: 24px; font-weight: 600; }
+  p { margin: 4px 0 0 0; font-size: 14px; color: #605e5c; }
+}
+
+.filterBar {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filterItem {
+  flex: 1;
+  min-width: 160px; /* Ensures dropdowns don't get too squished */
+}
+
+.tableWrapper {
+  background: #ffffff;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  margin-top: 16px;
+}
+
+/* Custom Table Cells */
+.docLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #0078d4;
+  font-weight: 600;
+  &:hover { text-decoration: underline; }
+}
+
+.fileIcon { font-size: 16px; }
+.iconWord { color: #185abd; } /* Word Blue */
+.iconExcel { color: #107c41; } /* Excel Green */
+.iconPdf { color: #d13438; } /* PDF Red */
+
+.cellModified {
+  display: flex;
+  flex-direction: column;
+  
+  .modifiedBy {
+    font-size: 11px;
+    font-style: italic;
+    color: #605e5c;
+    margin-top: 2px;
+  }
+}
+
+/* Table Footer (Pagination) */
+.tableFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-top: 1px solid #edebe9;
+  font-size: 13px;
+  color: #605e5c;
+}
+
+.footerLeft { display: flex; align-items: center; gap: 8px; }
+.footerMiddle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  .pageNumber {
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 2px;
+    &:hover { background: #f3f2f1; }
+  }
+  .activePage {
+    font-weight: bold;
+    color: #0078d4;
+    background: #f3f2f1;
+  }
+}
+
+/* --- CREATE DOCUMENT WIZARD STYLES --- */
+.wizardContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 4-Step Progress Header */
+.stepProgressBar {
+  display: flex;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  padding: 20px 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+
+  &.activeStep {
+    opacity: 1;
+    .stepCircle { background-color: #0078d4; color: white; border-color: #0078d4; }
+  }
+  &.completedStep {
+    opacity: 0.8;
+    .stepCircle { background-color: #107c10; color: white; border-color: #107c10; }
+  }
+}
+
+.stepCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #605e5c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.stepText {
+  display: flex;
+  flex-direction: column;
+  .stepTitle { font-weight: 600; font-size: 13px; color: #323130; }
+  .stepSubtitle { font-size: 11px; color: #605e5c; }
+}
+
+/* 2/3 and 1/3 Split Body Layout */
+.wizardBodyGrid {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.formPane {
+  flex: 2; /* 2/3 width */
+  background: #ffffff;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.previewPane {
+  flex: 1; /* 1/3 width */
+  background: #faf9f8;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  padding: 20px;
+  position: sticky;
+  top: 20px;
+  
+  h4 { margin-top: 0; color: #323130; font-size: 15px; border-bottom: 1px solid #edebe9; padding-bottom: 8px; }
+}
+
+.previewBox {
+  background: white;
+  border: 1px solid #c8c6c4;
+  height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #605e5c;
+  font-style: italic;
+  margin-top: 12px;
+  border-radius: 2px;
+}
+
+/* Document Type Selection Cards */
+.typeCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.typeCard {
+  border: 2px solid #edebe9;
+  border-radius: 4px;
+  padding: 16px;
+  cursor: pointer;
+  background: #ffffff;
+  text-align: center;
+  transition: all 0.2s ease;
+
+  &:hover { border-color: #b3b0ad; background: #faf9f8; }
+  &.selectedTypeCard {
+    border-color: #0078d4;
+    background: #eff6fc;
+  }
+
+  .cardIcon { font-size: 28px; color: #0078d4; margin-bottom: 8px; }
+  .cardTitle { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #323130; }
+  .cardDesc { font-size: 11px; color: #605e5c; }
+}
+
+/* 3-Column Form Grid */
+.formGrid3Cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.formGridFull {
+  grid-column: span 3;
+}
+
+/* Wizard Footer Navigation */
+.wizardFooter {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #edebe9;
+}
