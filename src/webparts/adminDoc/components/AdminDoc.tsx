@@ -171,7 +171,8 @@ export default function AdminDoc(props: IAdminDocProps) {
   const renderContent = () => {
   switch (activeScreen) {
     case 'dashboard': return renderDashboard();
-    case 'documents': return <DocumentsView />;
+    case 'documents': 
+        return <DocumentsView context={props.context} onCreateNew={() => setActiveScreen('create')} />;
     case 'create': return <CreateDocumentView context={props.context} userDisplayName={props.userDisplayName} onSuccess={() => setActiveScreen('documents')} />;
     default: return <div><h2>Under Construction</h2><p>This screen is not built yet.</p></div>;
   }

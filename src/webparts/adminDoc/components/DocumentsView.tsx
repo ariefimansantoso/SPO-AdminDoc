@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useState, useEffect } from 'react';
 import styles from './AdminDoc.module.scss';
 import { PrimaryButton, DefaultButton } from '@fluentui/react/lib/Button';
 import { TextField } from '@fluentui/react/lib/TextField';
@@ -8,6 +9,15 @@ import { DetailsList, SelectionMode, IColumn, DetailsListLayoutMode } from '@flu
 import { Persona, PersonaSize } from '@fluentui/react/lib/Persona';
 import { Icon } from '@fluentui/react/lib/Icon';
 import { IconButton } from '@fluentui/react/lib/Button';
+import { Spinner, SpinnerSize } from '@fluentui/react/lib/Spinner';
+import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
+import { WebPartContext } from '@microsoft/sp-webpart-base';
+import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
+
+interface IDocumentsViewProps {
+  context: WebPartContext;
+  onCreateNew: () => void;
+}
 
 // Dropdown filter options
 const statusOptions: IDropdownOption[] = [
@@ -43,14 +53,170 @@ const ownerOptions: IDropdownOption[] = [
   { key: 'me', text: 'Me' }
 ];
 
-// Mock Data
-const mockDocuments = [
-  { key: '1', docNo: 'SOP-2026-001', title: 'Server Maintenance Procedure', type: 'SOP', dept: 'IT', owner: 'Arief Iman Santoso', status: 'Published', version: 'v1.0', modified: '08/17/2026 10:30 AM', modifiedBy: 'Arief Iman Santoso', fileType: 'word' },
-  { key: '2', docNo: 'POL-2026-042', title: 'Employee Code of Conduct', type: 'Policy', dept: 'HR', owner: 'Budi Santoso', status: 'Under Review', version: 'v0.9', modified: '08/16/2026 02:15 PM', modifiedBy: 'System', fileType: 'pdf' },
-  { key: '3', docNo: 'FRM-2026-112', title: 'Hardware Request Form', type: 'Form', dept: 'Operations', owner: 'Siti Aminah', status: 'Draft', version: 'v0.1', modified: '08/15/2026 09:00 AM', modifiedBy: 'Siti Aminah', fileType: 'excel' },
-];
+export const DocumentsView: React.FC<IDocumentsViewProps> = ({ context, onCreateNew }) => {
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-export const DocumentsView: React.FC = () => {
+  // Filter states
+  const [searchText, setSearchText] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedDept, setSelectedDept] = useState<string>('all');
+  const [selectedPivot, setSelectedPivot] = useState<string>('All Documents');
+
+  useEffect(() => {
+    fetchSharePointDocuments();
+  }, []);
+
+  const fetchSharePointDocuments = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const siteUrl = context.pageContext.web.absoluteUrl;
+      
+      // Use standard GET with proper headers to avoid any OData reader issues
+      const response: SPHttpClientResponse = await context.spHttpClient.get(
+        `${siteUrl}/_api/web/lists/getbytitle('Documents')/items?$orderby=Created desc`,
+        SPHttpClient.configurations.v1,
+        {
+          headers: {
+            'Accept': 'application/json;odata=verbose'
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Accessing the results array safely
+        const results = data.d && data.d.results ? data.d.results : (data.value || []);
+
+        const mappedDocs = results.map((item: any) => {
+          const fileName = item.FileLeafRef || '';
+          const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'word';
+          let fileType = 'word';
+          if (fileExtension === 'pdf') fileType = 'pdf';
+          else if (fileExtension === 'xls' || fileExtension === 'xlsx') fileType = 'excel';
+
+          return {
+            key: (item.Id || item.ID || Math.random()).toString(),
+            id: item.Id || item.ID || 0,
+            docNo: item.Title ? `DOC-${item.Id}` : 'SOP-2026-001',
+            title: item.Title || fileName || 'Untitled Document',
+            type: item.DocumentType || 'SOP',
+            dept: item.Department || 'IT',
+            owner: 'Arief Iman Santoso',
+            status: item.Status || 'Draft',
+            version: item.VersionText || 'v1.0',
+            modified: item.Modified ? new Date(item.Modified).toLocaleString() : '08/17/2026 10:30 AM',
+            modifiedBy: 'Arief Iman Santoso',
+            fileType: fileType
+          };
+        });
+
+        setDocuments(mappedDocs);
+        setFilteredDocuments(mappedDocs);
+      } else {
+        // Log the actual error to console so we can see what SharePoint is complaining about
+        const errorText = await response.text();
+        console.error('SharePoint Fetch Error:', errorText);
+        setErrorMessage(`Error fetching documents: ${response.statusText}`);
+      }
+    } catch (error: any) {
+      console.error('Error fetching documents:', error);
+      setErrorMessage('An unexpected network error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Apply all search and filter conditions
+  const applyFilters = (search: string, status: string, type: string, dept: string, pivot: string) => {
+    let result = [...documents];
+
+    // Pivot Tab Filter
+    if (pivot === 'My Documents') {
+      result = result.filter(d => d.owner === 'Arief Iman Santoso');
+    } else if (pivot === 'Draft') {
+      result = result.filter(d => d.status.toLowerCase() === 'draft');
+    } else if (pivot === 'Under Review') {
+      result = result.filter(d => d.status.toLowerCase() === 'under review');
+    } else if (pivot === 'Pending Approval') {
+      result = result.filter(d => d.status.toLowerCase() === 'pending approval');
+    } else if (pivot === 'Approved') {
+      result = result.filter(d => d.status.toLowerCase() === 'approved');
+    } else if (pivot === 'Published') {
+      result = result.filter(d => d.status.toLowerCase() === 'published');
+    } else if (pivot === 'Archived') {
+      result = result.filter(d => d.status.toLowerCase() === 'archived');
+    }
+
+    // Search Text
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(d => d.title.toLowerCase().includes(q) || d.docNo.toLowerCase().includes(q));
+    }
+
+    // Status Dropdown
+    if (status !== 'all') {
+      result = result.filter(d => d.status.toLowerCase().replace(/\s+/g, '') === status.toLowerCase());
+    }
+
+    // Type Dropdown
+    if (type !== 'all') {
+      result = result.filter(d => d.type.toLowerCase() === type.toLowerCase());
+    }
+
+    // Dept Dropdown
+    if (dept !== 'all') {
+      result = result.filter(d => d.dept.toLowerCase() === dept.toLowerCase());
+    }
+
+    setFilteredDocuments(result);
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearchText(val);
+    applyFilters(val, selectedStatus, selectedType, selectedDept, selectedPivot);
+  };
+
+  const handleStatusChange = (opt?: IDropdownOption) => {
+    const key = opt ? (opt.key as string) : 'all';
+    setSelectedStatus(key);
+    applyFilters(searchText, key, selectedType, selectedDept, selectedPivot);
+  };
+
+  const handleTypeChange = (opt?: IDropdownOption) => {
+    const key = opt ? (opt.key as string) : 'all';
+    setSelectedType(key);
+    applyFilters(searchText, selectedStatus, key, selectedDept, selectedPivot);
+  };
+
+  const handleDeptChange = (opt?: IDropdownOption) => {
+    const key = opt ? (opt.key as string) : 'all';
+    setSelectedDept(key);
+    applyFilters(searchText, selectedStatus, selectedType, key, selectedPivot);
+  };
+
+  const handlePivotClick = (item?: PivotItem) => {
+    if (item && item.props.headerText) {
+      const header = item.props.headerText;
+      setSelectedPivot(header);
+      applyFilters(searchText, selectedStatus, selectedType, selectedDept, header);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSearchText('');
+    setSelectedStatus('all');
+    setSelectedType('all');
+    setSelectedDept('all');
+    setSelectedPivot('All Documents');
+    setFilteredDocuments(documents);
+  };
+
   const columns: IColumn[] = [
     {
       key: 'docNo', name: 'Document No.', fieldName: 'docNo', minWidth: 130, maxWidth: 160,
@@ -61,7 +227,7 @@ export const DocumentsView: React.FC = () => {
         if (item.fileType === 'excel') { iconName = 'ExcelDocument'; iconClass = styles.iconExcel; }
         if (item.fileType === 'pdf') { iconName = 'PDFDocument'; iconClass = styles.iconPdf; }
         return (
-          <a href="#" className={styles.docLink}>
+          <a href="#" className={styles.docLink} onClick={(e) => e.preventDefault()}>
             <Icon iconName={iconName} className={`${styles.fileIcon} ${iconClass}`} /> {item.docNo}
           </a>
         );
@@ -110,24 +276,48 @@ export const DocumentsView: React.FC = () => {
           <h2>Documents</h2>
           <p>Browse, search, and manage all document</p>
         </div>
-        <PrimaryButton text="Create Document" iconProps={{ iconName: 'Add' }} />
+        <PrimaryButton text="Create Document" iconProps={{ iconName: 'Add' }} onClick={onCreateNew} />
       </div>
 
       {/* Filter Bar */}
       <div className={styles.filterBar}>
         <div className={styles.filterItem}>
-          <TextField placeholder="Search document..." iconProps={{ iconName: 'Search' }} />
+          <TextField 
+            placeholder="Search document..." 
+            iconProps={{ iconName: 'Search' }} 
+            value={searchText}
+            onChange={(e, val) => handleSearchChange(val || '')}
+          />
         </div>
-        <div className={styles.filterItem}><Dropdown defaultSelectedKey="all" options={statusOptions} /></div>
-        <div className={styles.filterItem}><Dropdown defaultSelectedKey="all" options={typeOptions} /></div>
-        <div className={styles.filterItem}><Dropdown defaultSelectedKey="all" options={deptOptions} /></div>
-        <div className={styles.filterItem}><Dropdown defaultSelectedKey="all" options={ownerOptions} /></div>
-        <DefaultButton text="Clear" />
+        <div className={styles.filterItem}>
+          <Dropdown selectedKey={selectedStatus} options={statusOptions} onChange={(e, opt) => handleStatusChange(opt)} />
+        </div>
+        <div className={styles.filterItem}>
+          <Dropdown selectedKey={selectedType} options={typeOptions} onChange={(e, opt) => handleTypeChange(opt)} />
+        </div>
+        <div className={styles.filterItem}>
+          <Dropdown selectedKey={selectedDept} options={deptOptions} onChange={(e, opt) => handleDeptChange(opt)} />
+        </div>
+        <div className={styles.filterItem}>
+          <Dropdown defaultSelectedKey="all" options={ownerOptions} />
+        </div>
+        <DefaultButton text="Clear" onClick={handleClearFilters} />
       </div>
+
+      {errorMessage && (
+        <MessageBar messageBarType={MessageBarType.error} style={{ marginBottom: '16px' }}>
+          {errorMessage}
+        </MessageBar>
+      )}
 
       {/* Tabbed Container / Table */}
       <div className={styles.tableWrapper}>
-        <Pivot aria-label="Document Status Filters" style={{ padding: '8px 16px 0 16px', borderBottom: '1px solid #edebe9' }}>
+        <Pivot 
+          aria-label="Document Status Filters" 
+          selectedKey={selectedPivot}
+          onLinkClick={handlePivotClick}
+          style={{ padding: '8px 16px 0 16px', borderBottom: '1px solid #edebe9' }}
+        >
           <PivotItem headerText="All Documents" itemIcon="DocumentSet" />
           <PivotItem headerText="My Documents" itemIcon="FollowUser" />
           <PivotItem headerText="Draft" itemIcon="Edit" />
@@ -138,14 +328,20 @@ export const DocumentsView: React.FC = () => {
           <PivotItem headerText="Archived" itemIcon="Archive" />
         </Pivot>
 
-        <DetailsList
-          items={mockDocuments}
-          columns={columns}
-          selectionMode={SelectionMode.multiple}
-          setKey="multiple"
-          layoutMode={DetailsListLayoutMode.justified}
-          isHeaderVisible={true}
-        />
+        {isLoading ? (
+          <div style={{ padding: '50px 0', textAlign: 'center' }}>
+            <Spinner size={SpinnerSize.large} label="Loading documents from SharePoint..." />
+          </div>
+        ) : (
+          <DetailsList 
+            items={filteredDocuments}
+            columns={columns}
+            selectionMode={SelectionMode.multiple}
+            setKey="multiple"
+            layoutMode={DetailsListLayoutMode.justified}
+            isHeaderVisible={true}
+          />
+        )}
 
         {/* Footer */}
         <div className={styles.tableFooter}>
@@ -166,7 +362,7 @@ export const DocumentsView: React.FC = () => {
             <IconButton iconProps={{ iconName: 'DoubleChevronRight' }} title="Last Page" />
           </div>
           
-          <div>Showing 1 to 3 of 1,402 documents</div>
+          <div>Showing 1 to {filteredDocuments.length} of {documents.length} documents</div>
         </div>
       </div>
     </div>
